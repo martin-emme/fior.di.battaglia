@@ -29,6 +29,7 @@ class PlanciaEsagonale {
         this.turnoIndicatore = document.getElementById('turno-indicatore');
         this.fineTurnoBtn = document.getElementById('fine-turno');
         this.ruotaPlanciaBtn = document.getElementById('ruota-plancia');
+        this.zoomSlider = document.getElementById('zoom-slider');
         this.faseIndicatore = document.createElement('div');
         this.faseIndicatore.id = 'fase-indicatore';
         this.ui = document.querySelector('.ui-container');
@@ -329,9 +330,45 @@ class PlanciaEsagonale {
             this.panX = mouseX - mouseXRelative * this.scale;
             this.panY = mouseY - mouseYRelative * this.scale;
             
+            // Sincronizza lo slider con il nuovo valore di zoom
+            this.zoomSlider.value = this.scale;
+            
             this.updateTransform();
         }, { passive: false });
 
+        // Touch zoom per mobile
+        let initialDistance = 0;
+        let initialScale = 1;
+
+        this.viewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                initialDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialScale = this.scale;
+            }
+        }, { passive: false });
+
+        this.viewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const currentDistance = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                
+                const scale = currentDistance / initialDistance;
+                const newScale = Math.max(0.2, Math.min(5, initialScale * scale));
+                
+                this.scale = newScale;
+                this.zoomSlider.value = this.scale;
+                this.updateTransform();
+            }
+        }, { passive: false });
+
+        // Mouse events per desktop
         this.viewport.addEventListener('mousedown', (e) => {
             if (e.button === 0 && !e.target.closest('.pedina')) {
                 this.isDragging = true;
@@ -355,7 +392,48 @@ class PlanciaEsagonale {
             this.viewport.style.cursor = 'grab';
         });
 
+        // Touch events per mobile
+        this.viewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1 && !e.target.closest('.pedina')) {
+                e.preventDefault();
+                this.isDragging = true;
+                this.lastX = e.touches[0].clientX;
+                this.lastY = e.touches[0].clientY;
+                this.viewport.style.cursor = 'grabbing';
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!this.isDragging || e.touches.length !== 1) return;
+            e.preventDefault();
+            this.panX += (e.touches[0].clientX - this.lastX);
+            this.panY += (e.touches[0].clientY - this.lastY);
+            this.lastX = e.touches[0].clientX;
+            this.lastY = e.touches[0].clientY;
+            this.updateTransform();
+        }, { passive: false });
+
+        document.addEventListener('touchend', (e) => {
+            this.isDragging = false;
+            this.viewport.style.cursor = 'grab';
+        });
+
+        // Click events per desktop e mobile
         this.plancia.addEventListener('click', (e) => {
+            const pedina = e.target.closest('.pedina');
+            if (pedina) {
+                this.handlePedinaClick(pedina);
+                return;
+            }
+            
+            const hex = e.target.closest('.hex');
+            if (hex && this.pedinaAttiva) {
+                this.handleHexClick(hex);
+            }
+        });
+
+        // Touch events per mobile
+        this.plancia.addEventListener('touchend', (e) => {
             const pedina = e.target.closest('.pedina');
             if (pedina) {
                 this.handlePedinaClick(pedina);
@@ -386,6 +464,44 @@ class PlanciaEsagonale {
             }
         });
 
+        // Long press per mobile (equivalente al click destro)
+        let longPressTimer = null;
+        let longPressTarget = null;
+
+        this.plancia.addEventListener('touchstart', (e) => {
+            const target = e.target.closest('.pedina');
+            if (target) {
+                longPressTarget = target;
+                longPressTimer = setTimeout(() => {
+                    if (longPressTarget && this.pedinaAttiva) {
+                        // Verifica che la pedina target sia dello stesso tipo
+                        if (longPressTarget.dataset.tipo !== this.pedinaAttiva.dataset.tipo) return;
+                        
+                        // Verifica che la pedina target sia adiacente
+                        if (this.sonoPedineAdiacenti(this.pedinaAttiva, longPressTarget)) {
+                            this.sovrapponiPedine(this.pedinaAttiva, longPressTarget);
+                        }
+                    }
+                }, 500); // 500ms per il long press
+            }
+        });
+
+        this.plancia.addEventListener('touchend', (e) => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            longPressTarget = null;
+        });
+
+        this.plancia.addEventListener('touchmove', (e) => {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            longPressTarget = null;
+        });
+
         this.fineTurnoBtn.addEventListener('click', () => {
             this.passaTurno();
         });
@@ -393,6 +509,16 @@ class PlanciaEsagonale {
         this.ruotaPlanciaBtn.addEventListener('click', () => {
             this.ruotaPlancia();
         });
+
+        // Event listener per lo slider di zoom
+        this.zoomSlider.addEventListener('input', (e) => {
+            const newScale = parseFloat(e.target.value);
+            this.scale = newScale;
+            this.updateTransform();
+        });
+
+        // Sincronizza lo slider con il valore di zoom corrente
+        this.zoomSlider.value = this.scale;
     }
 
     handlePedinaClick(pedina) {
