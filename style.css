@@ -1,0 +1,54 @@
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        filter: brightness(100%);
+    }
+    50% {
+        transform: scale(1.1);
+        filter: brightness(120%);
+    }
+    100% {
+        transform: scale(1);
+        filter: brightness(100%);
+    }
+}
+
+.pedina-in-difesa {
+    animation: pulse 1s infinite ease-in-out;
+    cursor: pointer;
+}
+
+.indicatore-attacco {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    pointer-events: none;
+    z-index: 1000;
+    animation: float 1s infinite ease-in-out;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+
+.spade-combattimento {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    transform: translate(-50%, -50%);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="%23FF0000" d="M12 2L4 10h6v12h4V10h6z"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    z-index: 1000;
+    animation: float 1s infinite ease-in-out;
+}
+
+@keyframes float {
+    0% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, -70%); }
+    100% { transform: translate(-50%, -50%); }
+} 

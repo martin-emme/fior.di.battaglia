@@ -1,0 +1,1008 @@
+/* Reset e stili base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    touch-action: none;
+    user-select: none;
+}
+
+body {
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+.ui-container {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 12px;
+    border-radius: 8px;
+    z-index: 100;
+    min-width: 180px;
+}
+
+#turno-indicatore {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+#fine-turno {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+#fine-turno:hover {
+    background: #666;
+    transform: translateY(-1px);
+}
+
+#ruota-plancia {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    text-align: center;
+    margin-top: 8px;
+}
+
+#ruota-plancia:hover {
+    background: #45a049;
+    transform: translateY(-1px);
+}
+
+.game-container {
+    width: 140vmin;
+    height: 80vmin;
+    margin-top: 50px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-border {
+    width: 96%;
+    height: 96%;
+    border: 10px solid #5a3d2b;
+    border-radius: 6px;
+    box-shadow: 0 0 25px #000;
+    background: #1a120b;
+    position: relative;
+    overflow: hidden;
+    margin: auto;
+}
+
+#viewport {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    top: 0;
+    left: 0;
+}
+
+#plancia {
+    position: absolute;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+
+/* Esagoni */
+.hex {
+    position: absolute;
+    width: 6mm;
+    height: 6mm;
+    background: #4CAF50;
+    clip-path: polygon(
+        25% 5%,
+        75% 5%,
+        100% 50%,
+        75% 100%,
+        25% 100%,
+        0% 50%
+    );
+    box-shadow: 0 0 0 0.15mm rgba(255,255,255,0.4);
+    transition: all 0.3s ease;
+    z-index: 1;
+}
+
+/* Esagoni raggiungibili */
+.hex.reachable {
+    background: #81C784;
+    cursor: pointer;
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 0 0.4mm white, 0 0 8px rgba(129, 199, 132, 0.8);
+    transform: scale(1.06);
+    z-index: 2;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1.06); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1.06); opacity: 0.9; }
+}
+
+/* Esagoni di ritirata */
+.hex.ritirata {
+    background: #FFA726;
+    cursor: pointer;
+    animation: pulseRitirata 1.5s infinite;
+    box-shadow: 0 0 0 0.4mm white, 0 0 8px rgba(255, 167, 38, 0.8);
+    transform: scale(1.06);
+    z-index: 2;
+}
+
+@keyframes pulseRitirata {
+    0% { transform: scale(1.06); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1.06); opacity: 0.9; }
+}
+
+/* Esagoni di ritirata con possibilità di sovrapposizione */
+.hex.ritirata.ritirata-sovrapponibile {
+    background: #FFC107;
+    animation: pulseSovrapposizione 1.5s infinite;
+    box-shadow: 0 0 0 0.4mm white, 0 0 8px rgba(255, 193, 7, 0.8);
+}
+
+@keyframes pulseSovrapposizione {
+    0% { transform: scale(1.06); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 0.6mm white, 0 0 12px rgba(255, 193, 7, 0.9); }
+    100% { transform: scale(1.06); opacity: 0.9; }
+}
+
+/* Pedine */
+.pedina {
+    position: absolute;
+    width: 5mm;
+    height: 5mm;
+    border-radius: 1.2mm;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0.3mm;
+    box-shadow: 0 0 1.2mm rgba(0,0,0,0.8);
+    z-index: 10;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+}
+
+.pedina:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 20;
+}
+
+.pedina.active {
+    box-shadow: 0 0 0 0.5mm white, 0 0 2mm 1mm gold;
+    transform: translate(-50%, -50%) scale(1.1);
+    z-index: 30;
+    animation: activePulse 1.5s infinite;
+}
+
+@keyframes activePulse {
+    0% { box-shadow: 0 0 0 0.5mm white, 0 0 2mm 1mm gold; }
+    50% { box-shadow: 0 0 0 0.7mm white, 0 0 3mm 1.5mm gold; }
+    100% { box-shadow: 0 0 0 0.5mm white, 0 0 2mm 1mm gold; }
+}
+
+.pedina-immagine {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4mm;
+    height: 4mm;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 1;
+}
+
+.pedina-valore {
+    position: relative;
+    z-index: 2;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 50%;
+    width: 1.5mm;
+    height: 1.5mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2mm;
+    margin: 0.1mm;
+}
+
+/* Stile speciale per il valore del Re */
+.pedina[data-ruolo="re"] .pedina-valore {
+    position: absolute;
+    bottom: 0.2mm;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+}
+
+/* Rimuovi il filtro per le pedine fanteria */
+.pedina-rossa[data-ruolo="fanteria"] .pedina-immagine,
+.pedina-gialla[data-ruolo="fanteria"] .pedina-immagine {
+    filter: none;
+}
+
+/* Colori pedine */
+.pedina-rossa {
+    background: linear-gradient(135deg, #FF6B6B, #FF5252);
+}
+
+.pedina-gialla {
+    background: linear-gradient(135deg, #FFF176, #FFEB3B);
+}
+
+/* Gestione multiple pedine */
+.pedina-multiple {
+    filter: brightness(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .game-container {
+        width: 98vmin;
+        height: 98vmin;
+        margin-top: 20px;
+    }
+    
+    .ui-container {
+        top: 5px;
+        left: 5px;
+        padding: 8px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+    
+    #turno-indicatore {
+        font-size: 16px;
+    }
+    
+    #fine-turno {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+    
+    .pedina {
+        width: 4.5mm;
+        height: 4.5mm;
+    }
+}
+/* Aggiungi queste regole al CSS esistente */
+
+/* Stile base pedine */
+.pedina {
+    transition: all 0.3s ease;
+    will-change: transform;
+}
+
+/* Sovrapposizioni visibili */
+.pedina.sovrapposta-1 {
+    transform: translate(-50%, -50%) translate(-0.4mm, -0.4mm);
+    z-index: 11;
+}
+
+.pedina.sovrapposta-2 {
+    transform: translate(-50%, -50%) translate(0.4mm, 0.4mm);
+    z-index: 12;
+}
+
+.pedina.sovrapposta-3 {
+    transform: translate(-50%, -50%) translate(0mm, 0.8mm);
+    z-index: 13;
+}
+
+/* Contatore sovrapposizioni */
+.pedina::after {
+    content: attr(data-count);
+    position: absolute;
+    bottom: -1.5mm;
+    right: -1.5mm;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border-radius: 50%;
+    width: 2.5mm;
+    height: 2.5mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8mm;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pedina.sovrapposta-1::after,
+.pedina.sovrapposta-2::after,
+.pedina.sovrapposta-3::after {
+    opacity: 1;
+}
+
+/* Evidenziazione esagoni con pedine alleate */
+.hex.alleato {
+    box-shadow: inset 0 0 0 0.3mm rgba(255,255,255,0.5);
+}
+
+#fase-indicatore {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    z-index: 100;
+    min-width: 180px;
+}
+
+.fase-button {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    margin: 4px 0;
+    cursor: pointer;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.fase-button:hover {
+    background: #666;
+    transform: translateY(-1px);
+}
+
+.fase-button.active {
+    background: #4CAF50;
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.8);
+}
+
+.fase-button.disabled {
+    background: #333;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.spade-combattimento {
+    position: absolute;
+    width: 8mm;
+    height: 8mm;
+    transform: translate(-50%, -50%);
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23FFD700" d="M35,15 L45,25 L25,45 L15,35 L35,15 M65,85 L55,75 L75,55 L85,65 L65,85" stroke="%23FFD700" stroke-width="2"/><path fill="%23FFD700" d="M85,15 L75,25 L55,45 L45,55 L25,75 L15,85 L35,85 L45,75 L65,55 L75,45 L85,35 L85,15" stroke="%23FFD700" stroke-width="2"/><circle cx="30" cy="20" r="5" fill="%23FFD700"/><circle cx="70" cy="80" r="5" fill="%23FFD700"/><circle cx="80" cy="20" r="5" fill="%23FFD700"/><circle cx="20" cy="80" r="5" fill="%23FFD700"/></svg>');
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    z-index: 30;
+    animation: rotateSpade 3s infinite;
+    filter: drop-shadow(0 0 3mm rgba(255, 215, 0, 0.7));
+}
+
+@keyframes rotateSpade {
+    0% { transform: translate(-50%, -50%) rotate(0deg) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(360deg) scale(1); opacity: 0.8; }
+}
+
+.popup-combattimento {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(26, 18, 11, 0.95);
+    border: 2px solid #5a3d2b;
+    border-radius: 8px;
+    padding: 20px;
+    width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+    color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.popup-combattimento h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #FFD700;
+    font-size: 1.5em;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+.chiudi-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.chiudi-popup:hover {
+    color: #FFA500;
+    transform: scale(1.1);
+}
+
+.combat-details {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.combat-details p {
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+
+.dice-container {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+}
+
+.dice {
+    font-size: 48px;
+    margin: 10px 0;
+    transition: transform 0.1s ease;
+}
+
+.dice.rolling {
+    animation: roll 0.1s infinite;
+}
+
+@keyframes roll {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.combat-button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #FFD700;
+    border: none;
+    border-radius: 5px;
+    color: #000;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.combat-button:hover {
+    background: #FFA500;
+    transform: scale(1.02);
+}
+
+.combat-button:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#outcome-display {
+    font-weight: bold;
+    color: #FFD700;
+}
+
+#ratio-display {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+#dice-display {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+#dice-container {
+    margin: 30px 0;
+    perspective: 1000px;
+    height: 120px;
+    text-align: center;
+}
+
+#dice {
+    font-size: 100px;
+    margin: 0 auto;
+    transition: transform 0.8s;
+    display: inline-block;
+    color: #f1c40f;
+}
+
+.rolling {
+    animation: diceRoll 1.2s ease-out;
+}
+
+@keyframes diceRoll {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    25% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+    50% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+    75% { transform: rotateX(1080deg) rotateY(540deg) rotateZ(270deg); }
+    100% { transform: rotateX(1440deg) rotateY(720deg) rotateZ(360deg); }
+}
+
+#battle-result {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.details {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    background: #252525;
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.detail-item {
+    text-align: center;
+}
+
+.detail-label {
+    font-size: 14px;
+    color: #bdc3c7;
+    margin-bottom: 5px;
+}
+
+.detail-value {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.result-card {
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.attacker-lose {
+    background-color: rgba(231, 76, 60, 0.1);
+    border: 2px solid #e74c3c;
+}
+
+.defender-lose {
+    background-color: rgba(52, 152, 219, 0.1);
+    border: 2px solid #3498db;
+}
+
+.result-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.result-value {
+    font-size: 42px;
+    font-weight: 700;
+    margin: 10px 0;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Menu a ventaglio */
+.ventaglio-container {
+    position: absolute;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.ventaglio-pedina {
+    position: absolute;
+    width: 5mm;
+    height: 5mm;
+    transform-origin: bottom center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    z-index: 1001;
+    pointer-events: auto;
+}
+
+.ventaglio-pedina .pedina {
+    position: relative;
+    transform: none !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.ventaglio-pedina.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.7);
+}
+
+.ventaglio-pedina:nth-child(1) {
+    transform: rotate(-30deg) translateY(-6mm);
+    left: 2mm;
+}
+
+.ventaglio-pedina:nth-child(2) {
+    transform: translateY(-8mm);
+    left: 7.5mm;
+}
+
+.ventaglio-pedina:nth-child(3) {
+    transform: rotate(30deg) translateY(-6mm);
+    right: 2mm;
+}
+
+/* Sfondo semi-trasparente quando il ventaglio è aperto */
+.ventaglio-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999;
+    backdrop-filter: blur(2px);
+}
+
+/* Animazione per il ventaglio */
+@keyframes ventaglioOpen {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.ventaglio-container {
+    animation: ventaglioOpen 0.3s ease-out forwards;
+}
+
+/* Menu selezione pedine sovrapposte */
+.popup-selezione-pedine {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 18, 11, 0.95);
+    border: 2px solid #5a3d2b;
+    border-radius: 8px;
+    padding: 20px;
+    width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+    color: white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.popup-selezione-pedine h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #FFD700;
+    font-size: 1.5em;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+.lista-pedine {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.pedina-selezionabile {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pedina-selezionabile:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.pedina-selezionabile.selected {
+    background: rgba(255, 215, 0, 0.3);
+    border: 1px solid #FFD700;
+}
+
+.pedina-selezionabile.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.7);
+}
+
+.pedina-info {
+    margin-left: 10px;
+}
+
+.popup-selezione-pedine .chiudi-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.popup-selezione-pedine .chiudi-popup:hover {
+    color: #FFA500;
+    transform: scale(1.1);
+}
+
+.conferma-selezione {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: #FFD700;
+    border: none;
+    border-radius: 5px;
+    color: #000;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.conferma-selezione:hover {
+    background: #FFA500;
+    transform: scale(1.02);
+}
+
+.conferma-selezione:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.pedina[data-ruolo="fanteria"] {
+    border: 0.3mm solid silver;
+    box-shadow: 0 0 1.5mm rgba(192, 192, 192, 0.6), 0 0 1.2mm rgba(0,0,0,0.8);
+}
+
+.pedina[data-ruolo="fanteria"].active {
+    box-shadow: 0 0 2mm silver, 0 0 1.5mm rgba(192, 192, 192, 0.6), 0 0 1.2mm rgba(0,0,0,0.8);
+}
+
+.pedina[data-ruolo="fanteria"] .pedina-immagine {
+    width: 5mm;
+    height: 5mm;
+    background-size: cover;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.pedina-gialla[data-ruolo="cavalleria"] .pedina-immagine {
+    width: 5.5mm;
+    height: 5.5mm;
+    background-size: cover;
+    border-radius: 50%;
+    overflow: hidden;
+    filter: none;
+}
+
+.logo-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 100;
+}
+
+.logo {
+    width: 75px;
+    height: auto;
+    opacity: 0.9;
+    transition: opacity 0.3s ease;
+}
+
+.logo:hover {
+    opacity: 1;
+}
+
+.title-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.title-image {
+    max-width: 80%;
+    max-height: 80%;
+    opacity: 1;
+    animation: titleFade 8s ease-in-out forwards;
+}
+
+@keyframes titleFade {
+    0% { opacity: 1; }
+    62.5% { opacity: 1; } /* 5 secondi su 8 totali */
+    100% { opacity: 0; } /* 3 secondi di dissolvenza */
+}
+
+.raggio-capitano {
+    background-color: rgba(255, 255, 0, 0.3) !important;
+    border: 2px solid rgba(255, 255, 0, 0.5) !important;
+}
+
+.capitani-container {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.capitani-rossa, .capitani-gialla {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    pointer-events: auto;
+    width: 120px;
+}
+
+.capitani-rossa {
+    left: 100px;
+}
+
+.capitani-gialla {
+    right: 20px;
+}
+
+.capitano-da-posizionare {
+    width: 120px;
+    height: 80px;
+    border: 2px solid;
+    cursor: pointer;
+    transition: transform 0.2s;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    position: relative;
+    padding: 5px;
+    margin: 0 auto;
+}
+
+.pedina-rossa.capitano-da-posizionare {
+    border-color: #FF5252;
+}
+
+.pedina-gialla.capitano-da-posizionare {
+    border-color: #FFD600;
+}
+
+.capitano-da-posizionare:hover {
+    transform: scale(1.05);
+}
+
+.pedina-rossa.capitano-da-posizionare:hover {
+    box-shadow: 0 0 15px rgba(255, 82, 82, 0.5);
+}
+
+.pedina-gialla.capitano-da-posizionare:hover {
+    box-shadow: 0 0 15px rgba(255, 214, 0, 0.5);
+}
+
+.capitano-da-posizionare.selezionato {
+    border-width: 3px;
+}
+
+.pedina-rossa.capitano-da-posizionare.selezionato {
+    box-shadow: 0 0 20px rgba(255, 82, 82, 0.7);
+}
+
+.pedina-gialla.capitano-da-posizionare.selezionato {
+    box-shadow: 0 0 20px rgba(255, 214, 0, 0.7);
+}
+
+.turno-indicatore {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+}
+
+.fase-indicatore {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+}
+
+.pedina[data-ruolo="capitano"] {
+    background-size: contain !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
