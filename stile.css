@@ -248,11 +248,67 @@ body {
     z-index: 2;
 }
 
+/* Esagoni raggiungibili per il re (colore rosso leggero) */
+.hex.reachable.re-reachable {
+    background: #FFB3B3;
+    box-shadow: 0 0 0 0.4mm white, 0 0 8px rgba(255, 179, 179, 0.8);
+}
+
+/* Esagoni a distanza 2 per il re (colore rosso più scuro) */
+.hex.re-reachable-distance2 {
+    background: #FF8080;
+    animation: pulseReDistance2 2s infinite;
+    box-shadow: 0 0 0 0.3mm white, 0 0 6px rgba(255, 128, 128, 0.6);
+    transform: scale(1.03);
+    z-index: 1;
+}
+
+/* Esagoni a distanza 3 per il re (colore rosso ancora più scuro) */
+.hex.re-reachable-distance3 {
+    background: #FF4D4D;
+    animation: pulseReDistance3 2.5s infinite;
+    box-shadow: 0 0 0 0.2mm white, 0 0 4px rgba(255, 77, 77, 0.5);
+    transform: scale(1.02);
+    z-index: 1;
+}
+
+@keyframes pulseReDistance2 {
+    0% { transform: scale(1.03); opacity: 0.7; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+    100% { transform: scale(1.03); opacity: 0.7; }
+}
+
+@keyframes pulseReDistance3 {
+    0% { transform: scale(1.02); opacity: 0.6; }
+    50% { transform: scale(1.04); opacity: 0.8; }
+    100% { transform: scale(1.02); opacity: 0.6; }
+}
+
+/* Esagoni evidenziati dal re con nemici (solo per scopi strategici) */
+.hex.reachable-enemy {
+    background: #FF6B6B;
+    cursor: not-allowed;
+    animation: pulseEnemy 1.5s infinite;
+    box-shadow: 0 0 0 0.4mm white, 0 0 8px rgba(255, 107, 107, 0.8);
+    transform: scale(1.06);
+    z-index: 2;
+}
+
+
+
 @keyframes pulse {
     0% { transform: scale(1.06); opacity: 0.9; }
     50% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(1.06); opacity: 0.9; }
 }
+
+@keyframes pulseEnemy {
+    0% { transform: scale(1.06); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1.06); opacity: 0.9; }
+}
+
+
 
 /* Esagoni di ritirata */
 .hex.ritirata {
@@ -518,6 +574,22 @@ body {
     z-index: 30;
     animation: rotateSpade 3s infinite;
     filter: drop-shadow(0 0 3mm rgba(255, 215, 0, 0.7));
+    /* Miglioramenti per touch screen */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Stile per touch screen sui segnali di combattimento */
+@media (hover: none) and (pointer: coarse) {
+    .spade-combattimento {
+        width: 12mm;
+        height: 12mm;
+        filter: drop-shadow(0 0 4mm rgba(255, 215, 0, 0.8));
+    }
 }
 
 @keyframes rotateSpade {

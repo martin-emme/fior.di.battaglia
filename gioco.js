@@ -97,7 +97,7 @@ class PlanciaEsagonale {
         this.createPedina(2, 8, 'rossa', 2, 3, 'cavalleria');  // Cavalleria 4
 
         // Re (forza 0, movimento 1)
-        this.createPedina(7, 8, 'rossa', 0, 1, 're');  // Re
+        this.createPedina(3, 4, 'rossa', 0, 1, 're');  // Re
 
         // Pedine gialle (Giocatore 2) - Posizionate simmetricamente nell'angolo in alto a destra
         // Soldati in armatura (forza 3)
@@ -127,6 +127,9 @@ class PlanciaEsagonale {
         this.createPedina(9, 16, 'gialla', 2, 3, 'cavalleria');   // Cavalleria 2
         this.createPedina(12, 10, 'gialla', 2, 3, 'cavalleria');  // Cavalleria 3
         this.createPedina(11, 11, 'gialla', 2, 3, 'cavalleria');  // Cavalleria 4
+
+        // Re giallo (forza 0, movimento 1)
+        this.createPedina(11, 14, 'gialla', 0, 1, 're');  // Re giallo
     }
 
     createPedina(row, col, tipo, forza, movimento, ruolo = 'soldato') {
@@ -174,6 +177,13 @@ class PlanciaEsagonale {
         } else if (ruolo === 're') {
             if (tipo === 'rossa') {
                 immagine.style.backgroundImage = `url('re.r1.jpg')`;
+                immagine.style.backgroundSize = 'contain';
+                immagine.style.backgroundRepeat = 'no-repeat';
+                immagine.style.backgroundPosition = 'center';
+                immagine.style.width = '100%';
+                immagine.style.height = '100%';
+            } else if (tipo === 'gialla') {
+                immagine.style.backgroundImage = `url('re.g.jpg')`;
                 immagine.style.backgroundSize = 'contain';
                 immagine.style.backgroundRepeat = 'no-repeat';
                 immagine.style.backgroundPosition = 'center';
@@ -232,6 +242,18 @@ class PlanciaEsagonale {
         
         // Per il Re, mostra solo il movimento (forza 0)
         if (ruolo === 're') {
+            // Modifica il valore visualizzato per il re
+            movimentoEl.textContent = "3";
+            
+            // Colora il numero in base al tipo di pedina
+            if (tipo === 'rossa') {
+                movimentoEl.style.color = '#FF0000'; // Rosso brillante
+                movimentoEl.style.fontWeight = 'bold';
+            } else if (tipo === 'gialla') {
+                movimentoEl.style.color = '#FFFF00'; // Giallo brillante
+                movimentoEl.style.fontWeight = 'bold';
+            }
+            
             pedina.appendChild(movimentoEl);
         } else {
             pedina.appendChild(forzaEl);
@@ -630,6 +652,9 @@ class PlanciaEsagonale {
                 this.clearReachableHexes();
                 this.showReachableHexes();
             }
+        } else if (hex.classList.contains('reachable-enemy')) {
+            // Il re ha cliccato su una casella con nemici - non permettere il movimento
+            console.log('Il re non può muoversi in una casella occupata da nemici');
         }
     }
 
@@ -664,27 +689,65 @@ class PlanciaEsagonale {
             [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
             [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
 
-        directions.forEach(([dr, dc]) => {
-            const newRow = row + dr;
-            const newCol = col + dc;
+        // Controlla se c'è un re tra le pedine attive
+        const hasRe = Array.from(pedineAttive).some(pedina => pedina.dataset.ruolo === 're');
+        
+        if (hasRe) {
+            // Funzionalità speciale del re: evidenzia solo le caselle adiacenti (movimento 1)
+            // Il re si comporta come una pedina normale con movimento 1
             
-            if (this.isValidHex(newRow, newCol)) {
-                const hex = document.querySelector(`.hex[data-row="${newRow}"][data-col="${newCol}"]`);
-                const pedineAmiche = document.querySelectorAll(
-                    `.pedina[data-row="${newRow}"][data-col="${newCol}"][data-tipo="${tipoPedinaCorrente}"]`
-                );
-                const pedineNemiche = document.querySelectorAll(
-                    `.pedina[data-row="${newRow}"][data-col="${newCol}"]:not([data-tipo="${tipoPedinaCorrente}"])`
-                );
+            // Caselle adiacenti (movimento normale)
+            directions.forEach(([dr, dc]) => {
+                const newRow = row + dr;
+                const newCol = col + dc;
                 
-                // Permetti movimento se:
-                // 1. Non ci sono pedine nemiche E
-                // 2. Ci sono meno di 3 pedine amiche nella casella di destinazione
-                if (pedineNemiche.length === 0 && pedineAmiche.length < 3) {
-                    hex.classList.add('reachable');
+                if (this.isValidHex(newRow, newCol)) {
+                    const hex = document.querySelector(`.hex[data-row="${newRow}"][data-col="${newCol}"]`);
+                    const pedineAmiche = document.querySelectorAll(
+                        `.pedina[data-row="${newRow}"][data-col="${newCol}"][data-tipo="${tipoPedinaCorrente}"]`
+                    );
+                    const pedineNemiche = document.querySelectorAll(
+                        `.pedina[data-row="${newRow}"][data-col="${newCol}"]:not([data-tipo="${tipoPedinaCorrente}"])`
+                    );
+                    
+                    // Caselle raggiungibili per il movimento (solo senza nemici)
+                    if (pedineNemiche.length === 0 && pedineAmiche.length < 3) {
+                        hex.classList.add('reachable');
+                        hex.classList.add('re-reachable'); // Classe speciale per il re
+                    }
                 }
-            }
-        });
+            });
+            
+            // Evidenzia anche le caselle adiacenti alle caselle evidenziate (distanza 2)
+            this.evidenziaCaselleAdiacentiEvidenziate(row, col, tipoPedinaCorrente);
+            
+            // Evidenzia anche le caselle a distanza 3 (adiacenti alle caselle a distanza 2)
+            this.evidenziaCaselleDistanza3(row, col, tipoPedinaCorrente);
+            
+        } else {
+            // Comportamento normale per tutte le altre pedine
+            directions.forEach(([dr, dc]) => {
+                const newRow = row + dr;
+                const newCol = col + dc;
+                
+                if (this.isValidHex(newRow, newCol)) {
+                    const hex = document.querySelector(`.hex[data-row="${newRow}"][data-col="${newCol}"]`);
+                    const pedineAmiche = document.querySelectorAll(
+                        `.pedina[data-row="${newRow}"][data-col="${newCol}"][data-tipo="${tipoPedinaCorrente}"]`
+                    );
+                    const pedineNemiche = document.querySelectorAll(
+                        `.pedina[data-row="${newRow}"][data-col="${newCol}"]:not([data-tipo="${tipoPedinaCorrente}"])`
+                    );
+                    
+                    // Permetti movimento se:
+                    // 1. Non ci sono pedine nemiche E
+                    // 2. Ci sono meno di 3 pedine amiche nella casella di destinazione
+                    if (pedineNemiche.length === 0 && pedineAmiche.length < 3) {
+                        hex.classList.add('reachable');
+                    }
+                }
+            });
+        }
     }
 
     isValidHex(row, col) {
@@ -695,9 +758,223 @@ class PlanciaEsagonale {
         return !!document.querySelector(`.pedina[data-row="${row}"][data-col="${col}"]`);
     }
 
+    evidenziaCerchioStrategico(row, col, distanza, classeCSS) {
+        const isColonnaDispari = col % 2 === 0;
+        const directions = isColonnaDispari ? 
+            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+        
+        // Calcola tutte le posizioni a distanza specificata
+        const posizioni = this.calcolaPosizioniADistanza(row, col, distanza);
+        
+        posizioni.forEach(([r, c]) => {
+            if (this.isValidHex(r, c)) {
+                const hex = document.querySelector(`.hex[data-row="${r}"][data-col="${c}"]`);
+                if (hex) {
+                    hex.classList.add(classeCSS);
+                }
+            }
+        });
+    }
+
+    evidenziaCaselleAdiacentiEvidenziate(row, col, tipoPedinaCorrente) {
+        const isColonnaDispari = col % 2 === 0;
+        const directions = isColonnaDispari ? 
+            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+        
+        // Per ogni casella adiacente al re, trova le caselle adiacenti a quella
+        directions.forEach(([dr1, dc1]) => {
+            const casellaAdiacenteRow = row + dr1;
+            const casellaAdiacenteCol = col + dc1;
+            
+            if (this.isValidHex(casellaAdiacenteRow, casellaAdiacenteCol)) {
+                // Trova le direzioni per la casella adiacente
+                const isCasellaAdiacenteDispari = casellaAdiacenteCol % 2 === 0;
+                const directionsCasellaAdiacente = isCasellaAdiacenteDispari ? 
+                    [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+                    [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+                
+                // Evidenzia le caselle adiacenti alla casella adiacente al re
+                directionsCasellaAdiacente.forEach(([dr2, dc2]) => {
+                    const casellaDistanza2Row = casellaAdiacenteRow + dr2;
+                    const casellaDistanza2Col = casellaAdiacenteCol + dc2;
+                    
+                    // Non evidenziare la posizione del re stesso
+                    if (casellaDistanza2Row === row && casellaDistanza2Col === col) {
+                        return;
+                    }
+                    
+                    if (this.isValidHex(casellaDistanza2Row, casellaDistanza2Col)) {
+                        const hex = document.querySelector(`.hex[data-row="${casellaDistanza2Row}"][data-col="${casellaDistanza2Col}"]`);
+                        if (hex) {
+                            // Evidenzia con un colore diverso per le caselle a distanza 2
+                            hex.classList.add('re-reachable-distance2');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    evidenziaCaselleDistanza3(row, col, tipoPedinaCorrente) {
+        const isColonnaDispari = col % 2 === 0;
+        const directions = isColonnaDispari ? 
+            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+        
+        // Per ogni casella adiacente al re, trova le caselle adiacenti a quella
+        directions.forEach(([dr1, dc1]) => {
+            const casellaAdiacenteRow = row + dr1;
+            const casellaAdiacenteCol = col + dc1;
+            
+            if (this.isValidHex(casellaAdiacenteRow, casellaAdiacenteCol)) {
+                // Trova le direzioni per la casella adiacente
+                const isCasellaAdiacenteDispari = casellaAdiacenteCol % 2 === 0;
+                const directionsCasellaAdiacente = isCasellaAdiacenteDispari ? 
+                    [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+                    [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+                
+                // Per ogni casella a distanza 2, trova le caselle adiacenti a quella
+                directionsCasellaAdiacente.forEach(([dr2, dc2]) => {
+                    const casellaDistanza2Row = casellaAdiacenteRow + dr2;
+                    const casellaDistanza2Col = casellaAdiacenteCol + dc2;
+                    
+                    // Non considerare la posizione del re stesso
+                    if (casellaDistanza2Row === row && casellaDistanza2Col === col) {
+                        return;
+                    }
+                    
+                    if (this.isValidHex(casellaDistanza2Row, casellaDistanza2Col)) {
+                        // Trova le direzioni per la casella a distanza 2
+                        const isCasellaDistanza2Dispari = casellaDistanza2Col % 2 === 0;
+                        const directionsCasellaDistanza2 = isCasellaDistanza2Dispari ? 
+                            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+                            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+                        
+                        // Evidenzia le caselle adiacenti alla casella a distanza 2
+                        directionsCasellaDistanza2.forEach(([dr3, dc3]) => {
+                            const casellaDistanza3Row = casellaDistanza2Row + dr3;
+                            const casellaDistanza3Col = casellaDistanza2Col + dc3;
+                            
+                            // Non evidenziare la posizione del re stesso o caselle già evidenziate
+                            if ((casellaDistanza3Row === row && casellaDistanza3Col === col) ||
+                                this.isCasellaAdiacenteAlRe(casellaDistanza3Row, casellaDistanza3Col, row, col)) {
+                                return;
+                            }
+                            
+                            if (this.isValidHex(casellaDistanza3Row, casellaDistanza3Col)) {
+                                const hex = document.querySelector(`.hex[data-row="${casellaDistanza3Row}"][data-col="${casellaDistanza3Col}"]`);
+                                if (hex) {
+                                    // Evidenzia con un colore diverso per le caselle a distanza 3
+                                    hex.classList.add('re-reachable-distance3');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    mostraPopupVittoria(tipoReEliminato) {
+        // Determina il giocatore vincitore (opposto al re eliminato)
+        const giocatoreVincitore = tipoReEliminato === 'rossa' ? 'Giallo' : 'Rosso';
+        const coloreVincitore = tipoReEliminato === 'rossa' ? '#FFD600' : '#FF5252';
+        
+        // Crea il popup di vittoria
+        const popupVittoria = document.createElement('div');
+        popupVittoria.className = 'popup-vittoria';
+        popupVittoria.style.position = 'fixed';
+        popupVittoria.style.top = '50%';
+        popupVittoria.style.left = '50%';
+        popupVittoria.style.transform = 'translate(-50%, -50%)';
+        popupVittoria.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+        popupVittoria.style.color = coloreVincitore;
+        popupVittoria.style.padding = '40px';
+        popupVittoria.style.borderRadius = '15px';
+        popupVittoria.style.border = `3px solid ${coloreVincitore}`;
+        popupVittoria.style.zIndex = '2000';
+        popupVittoria.style.fontSize = '24px';
+        popupVittoria.style.fontWeight = 'bold';
+        popupVittoria.style.textAlign = 'center';
+        popupVittoria.style.boxShadow = `0 0 20px ${coloreVincitore}`;
+        popupVittoria.style.animation = 'vittoriaPulse 2s infinite';
+        
+        popupVittoria.innerHTML = `
+            <div style="margin-bottom: 20px; font-size: 36px;">🏆</div>
+            <div>VITTORIA DEL GIOCATORE</div>
+            <div style="font-size: 32px; margin-top: 10px;">${giocatoreVincitore.toUpperCase()}</div>
+            <div style="margin-top: 20px; font-size: 16px; color: white;">Il re ${tipoReEliminato === 'rossa' ? 'rosso' : 'giallo'} è stato eliminato!</div>
+        `;
+        
+        // Aggiungi l'animazione CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes vittoriaPulse {
+                0% { transform: translate(-50%, -50%) scale(1); }
+                50% { transform: translate(-50%, -50%) scale(1.05); }
+                100% { transform: translate(-50%, -50%) scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        document.body.appendChild(popupVittoria);
+        
+        // Il popup rimane visibile per sempre (o fino a ricaricare la pagina)
+        // L'utente può chiudere la pagina e ricaricare per una nuova partita
+    }
+
+    isCasellaAdiacenteAlRe(row, col, reRow, reCol) {
+        const isColonnaDispari = reCol % 2 === 0;
+        const directions = isColonnaDispari ? 
+            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+        
+        return directions.some(([dr, dc]) => {
+            return reRow + dr === row && reCol + dc === col;
+        });
+    }
+
+    calcolaPosizioniADistanza(row, col, distanza) {
+        const posizioni = new Set();
+        const isColonnaDispari = col % 2 === 0;
+        const directions = isColonnaDispari ? 
+            [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
+            [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
+        
+        // Funzione ricorsiva per calcolare tutte le posizioni a distanza specificata
+        const calcolaPosizioni = (r, c, distRimanente, percorso) => {
+            if (distRimanente === 0) {
+                posizioni.add(`${r},${c}`);
+                return;
+            }
+            
+            directions.forEach(([dr, dc]) => {
+                const newR = r + dr;
+                const newC = c + dc;
+                const chiave = `${newR},${newC}`;
+                
+                if (this.isValidHex(newR, newC) && !percorso.has(chiave)) {
+                    percorso.add(chiave);
+                    calcolaPosizioni(newR, newC, distRimanente - 1, percorso);
+                    percorso.delete(chiave);
+                }
+            });
+        };
+        
+        calcolaPosizioni(row, col, distanza, new Set());
+        
+        // Converti le stringhe in array di coordinate
+        return Array.from(posizioni).map(pos => {
+            const [r, c] = pos.split(',').map(Number);
+            return [r, c];
+        });
+    }
+
     clearReachableHexes() {
-        document.querySelectorAll('.hex.reachable').forEach(hex => {
-            hex.classList.remove('reachable');
+        document.querySelectorAll('.hex.reachable, .hex.reachable-enemy, .hex.re-reachable, .hex.re-reachable-distance2, .hex.re-reachable-distance3').forEach(hex => {
+            hex.classList.remove('reachable', 'reachable-enemy', 're-reachable', 're-reachable-distance2', 're-reachable-distance3');
         });
     }
 
@@ -831,6 +1108,14 @@ class PlanciaEsagonale {
                                 freccia.dataset.col2 = newCol;
                                 
                                 freccia.addEventListener('click', () => {
+                                    if (this.faseTurno === 'combattimento') {
+                                        this.apriPopupCombattimento(row, col, newRow, newCol);
+                                    }
+                                });
+                                
+                                // Aggiungi supporto per touch screen
+                                freccia.addEventListener('touchstart', (e) => {
+                                    e.preventDefault(); // Previeni il comportamento di default
                                     if (this.faseTurno === 'combattimento') {
                                         this.apriPopupCombattimento(row, col, newRow, newCol);
                                     }
@@ -1047,11 +1332,21 @@ class PlanciaEsagonale {
                     let pedineEliminateTotal = 0;
 
                     const eliminaPedinaConEffetto = (pedina) => {
+                        // Controlla se la pedina eliminata è un re
+                        const isRe = pedina.dataset.ruolo === 're';
+                        const tipoRe = pedina.dataset.tipo;
+                        
                         pedina.style.transition = 'opacity 1s ease-out';
                         pedina.style.opacity = '0';
                         setTimeout(() => {
                             pedina.remove();
                             pedineEliminateCount++;
+                            
+                            // Se è stato eliminato un re, mostra il popup di vittoria
+                            if (isRe) {
+                                this.mostraPopupVittoria(tipoRe);
+                            }
+                            
                             if (pedineEliminateCount === pedineEliminateTotal) {
                                 // Rimuovi immediatamente l'indicatore se tutte le pedine sono state eliminate
                                 if (pedineCheDevonoRitirare.length === 0) {
@@ -1675,6 +1970,10 @@ class PlanciaEsagonale {
     }
 
     eliminaPedinaConMessaggio(pedina) {
+        // Controlla se la pedina eliminata è un re
+        const isRe = pedina.dataset.ruolo === 're';
+        const tipoRe = pedina.dataset.tipo;
+        
         pedina.style.transition = 'opacity 1s ease-out';
         pedina.style.opacity = '0';
         
@@ -1694,6 +1993,12 @@ class PlanciaEsagonale {
         
         setTimeout(() => {
             pedina.remove();
+            
+            // Se è stato eliminato un re, mostra il popup di vittoria
+            if (isRe) {
+                this.mostraPopupVittoria(tipoRe);
+            }
+            
             messaggioEliminate.style.opacity = '0';
             setTimeout(() => messaggioEliminate.remove(), 1000);
         }, 1000);
