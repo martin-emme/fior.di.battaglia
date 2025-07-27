@@ -1184,3 +1184,51 @@ body {
     background-position: center !important;
     background-repeat: no-repeat !important;
 }
+
+/* Controllo Audio */
+.audio-control {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.audio-button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.audio-button:hover {
+    background: rgba(0, 0, 0, 0.9);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.audio-button.muted {
+    color: #666;
+    border-color: #666;
+    box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+}
+
+.audio-button.muted:hover {
+    box-shadow: 0 0 15px rgba(102, 102, 102, 0.5);
+}
+
+.audio-icon {
+    transition: all 0.3s ease;
+}
+
+.audio-button.muted .audio-icon {
+    opacity: 0.5;
+}

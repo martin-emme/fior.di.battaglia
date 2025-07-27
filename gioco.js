@@ -19,8 +19,77 @@ class PlanciaEsagonale {
         this.pedineAttaccanti = new Set(); // Set per tenere traccia delle pedine che hanno già attaccato
         this.rotazionePlancia = 0; // Rotazione in gradi (0, 90, 180, 270)
         
+        // Sistema Audio
+        this.audioFiles = [];
+        this.currentAudioIndex = 0;
+        this.audioPlayer = null;
+        this.isAudioMuted = false; // Inizia con l'audio attivo
+        
         this.init();
-        setTimeout(() => this.centerBoard(), 50);
+        
+        // Tentativo immediato di autoplay
+        setTimeout(() => {
+            this.centerBoard();
+            // Tentativo finale di autoplay dopo l'inizializzazione completa
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato dopo inizializzazione completa');
+                }).catch(e => {
+                    console.log('Autoplay fallito anche dopo inizializzazione:', e);
+                });
+            }
+        }, 50);
+        
+        // Tentativo aggiuntivo di autoplay dopo un delay più lungo
+        setTimeout(() => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato con delay aggiuntivo');
+                }).catch(e => {
+                    console.log('Autoplay fallito anche con delay aggiuntivo:', e);
+                });
+            }
+        }, 500);
+        
+        // Tentativo con delay ancora più lungo
+        setTimeout(() => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato con delay lungo');
+                }).catch(e => {
+                    console.log('Autoplay fallito anche con delay lungo:', e);
+                });
+            }
+        }, 2000);
+        
+        // Event listener per il caricamento completo della pagina
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (this.audioPlayer && this.isAudioMuted === false) {
+                    this.audioPlayer.play().then(() => {
+                        console.log('Audio avviato dopo caricamento completo della pagina');
+                    }).catch(e => {
+                        console.log('Autoplay fallito anche dopo caricamento completo:', e);
+                    });
+                }
+            }, 100);
+        });
+        
+        // Event listener per quando la pagina diventa visibile
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.audioPlayer && this.isAudioMuted === false) {
+                setTimeout(() => {
+                    this.audioPlayer.play().then(() => {
+                        console.log('Audio avviato quando pagina diventa visibile');
+                    }).catch(e => {
+                        console.log('Autoplay fallito quando pagina diventa visibile:', e);
+                    });
+                }, 100);
+            }
+        });
+        
+        // Crea un pulsante nascosto per forzare l'avvio dell'audio
+        this.createHiddenAudioButton();
     }
 
     init() {
@@ -38,6 +107,7 @@ class PlanciaEsagonale {
         this.createGrid();
         this.createPedine();
         this.setupEvents();
+        this.setupAudio();
         this.updateUI();
     }
 
@@ -875,6 +945,339 @@ class PlanciaEsagonale {
                 });
             }
         });
+    }
+
+    setupAudio() {
+        // Carica automaticamente tutti i file .mp3 dalla cartella music
+        this.audioFiles = [
+            'music/A Day in the Life of a Gong Farmer.mp3',
+            'music/A Strong Spice.mp3',
+            'music/Pints a Flowin.mp3',
+            'music/Sandal Maker.mp3',
+            'music/The Piper.mp3',
+            'music/Two Mandolins.mp3',
+            'music/Under an Old Tree.mp3'
+        ];
+        
+        if (this.audioFiles.length > 0) {
+            // Scegli un brano casuale per iniziare
+            this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+            this.setupAudioControls();
+            // Prova a far partire l'audio automaticamente
+            this.startAudioAutoplay();
+            // Assicurati che il pulsante mostri lo stato corretto
+            this.updateAudioButton();
+        }
+    }
+
+    startAudioAutoplay() {
+        // Crea il primo player audio
+        this.audioPlayer = new Audio(this.audioFiles[this.currentAudioIndex]);
+        this.audioPlayer.volume = 0.3;
+        this.audioPlayer.loop = false;
+        
+        // Event listener per quando finisce la canzone
+        this.audioPlayer.addEventListener('ended', () => {
+            // Scegli il prossimo brano in modo casuale
+            this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+            this.playNextAudio();
+        });
+        
+        // Event listener per errori
+        this.audioPlayer.addEventListener('error', (e) => {
+            console.log('Errore nel caricamento audio:', e);
+            // Scegli un brano casuale in caso di errore
+            this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+            this.playNextAudio();
+        });
+        
+        // Strategia ultra-aggressiva per l'autoplay
+        const tryAutoplay = () => {
+            // Prova con user gesture
+            this.audioPlayer.play().then(() => {
+                console.log('Audio avviato automaticamente');
+                this.isAudioMuted = false;
+                this.updateAudioButton();
+            }).catch(e => {
+                console.log('Tentativo autoplay fallito:', e);
+                // Riprova immediatamente
+                setTimeout(() => {
+                    this.audioPlayer.play().then(() => {
+                        console.log('Audio avviato al secondo tentativo');
+                        this.isAudioMuted = false;
+                        this.updateAudioButton();
+                    }).catch(e2 => {
+                        console.log('Autoplay fallito al secondo tentativo:', e2);
+                        // Riprova ancora
+                        setTimeout(() => {
+                            this.audioPlayer.play().then(() => {
+                                console.log('Audio avviato al terzo tentativo');
+                                this.isAudioMuted = false;
+                                this.updateAudioButton();
+                            }).catch(e3 => {
+                                console.log('Autoplay definitivamente bloccato:', e3);
+                                this.isAudioMuted = false;
+                                this.updateAudioButton();
+                            });
+                        }, 200);
+                    });
+                }, 50);
+            });
+        };
+        
+        // Prova subito
+        tryAutoplay();
+        
+        // Prova anche dopo che la pagina è completamente caricata
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', tryAutoplay);
+        }
+        
+        // Prova anche quando la finestra diventa visibile
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && this.audioPlayer && this.isAudioMuted === false) {
+                tryAutoplay();
+            }
+        });
+        
+        // Prova anche al primo click dell'utente
+        const startOnFirstInteraction = () => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato al primo click');
+                    this.isAudioMuted = false;
+                    this.updateAudioButton();
+                    // Rimuovi gli event listener dopo il successo
+                    document.removeEventListener('click', startOnFirstInteraction);
+                    document.removeEventListener('touchstart', startOnFirstInteraction);
+                    document.removeEventListener('mousedown', startOnFirstInteraction);
+                    document.removeEventListener('keydown', startOnFirstInteraction);
+                    document.removeEventListener('mousemove', startOnFirstInteraction);
+                    document.removeEventListener('scroll', startOnFirstInteraction);
+                }).catch(e => {
+                    console.log('Tentativo autoplay al primo click fallito:', e);
+                });
+            }
+        };
+        
+        // Aggiungi event listener per il primo click
+        document.addEventListener('click', startOnFirstInteraction);
+        document.addEventListener('touchstart', startOnFirstInteraction);
+        document.addEventListener('mousedown', startOnFirstInteraction);
+        document.addEventListener('keydown', startOnFirstInteraction);
+        document.addEventListener('mousemove', startOnFirstInteraction);
+        document.addEventListener('scroll', startOnFirstInteraction);
+        
+        // Prova anche con eventi di focus
+        document.addEventListener('focus', startOnFirstInteraction);
+        window.addEventListener('focus', startOnFirstInteraction);
+    }
+
+    playNextAudio() {
+        if (this.audioFiles.length === 0) return;
+        
+        // Ferma l'audio corrente se presente
+        if (this.audioPlayer) {
+            this.audioPlayer.pause();
+            this.audioPlayer = null;
+        }
+        
+        // Crea nuovo player audio
+        this.audioPlayer = new Audio(this.audioFiles[this.currentAudioIndex]);
+        this.audioPlayer.volume = 0.3; // Volume al 30%
+        this.audioPlayer.loop = false;
+        
+        // Event listener per quando finisce la canzone
+        this.audioPlayer.addEventListener('ended', () => {
+            // Scegli il prossimo brano in modo casuale
+            this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+            this.playNextAudio();
+        });
+        
+        // Event listener per errori
+        this.audioPlayer.addEventListener('error', (e) => {
+            console.log('Errore nel caricamento audio:', e);
+            // Scegli un brano casuale in caso di errore
+            this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+            this.playNextAudio();
+        });
+        
+        // Riproduci se non è mutato
+        if (!this.isAudioMuted) {
+            this.audioPlayer.play().catch(e => {
+                console.log('Errore nella riproduzione audio:', e);
+            });
+        }
+    }
+
+    updateAudioButton() {
+        const audioToggle = document.getElementById('audio-toggle');
+        const audioIcon = audioToggle.querySelector('.audio-icon');
+        
+        if (this.isAudioMuted) {
+            audioIcon.textContent = '🔇';
+            audioToggle.classList.add('muted');
+        } else {
+            audioIcon.textContent = '🔊';
+            audioToggle.classList.remove('muted');
+        }
+        
+        // Nascondi il pulsante nascosto se l'audio è attivo
+        const hiddenButton = document.getElementById('hidden-audio-button');
+        if (hiddenButton && this.audioPlayer && !this.audioPlayer.paused) {
+            hiddenButton.style.display = 'none';
+        }
+    }
+
+    setupAudioControls() {
+        const audioToggle = document.getElementById('audio-toggle');
+        
+        audioToggle.addEventListener('click', () => {
+            this.isAudioMuted = !this.isAudioMuted;
+            
+            if (this.isAudioMuted) {
+                // Muta l'audio
+                if (this.audioPlayer) {
+                    this.audioPlayer.pause();
+                }
+            } else {
+                // Riattiva l'audio
+                if (this.audioPlayer) {
+                    this.audioPlayer.play().catch(e => {
+                        console.log('Errore nella riproduzione audio:', e);
+                    });
+                }
+            }
+            
+            this.updateAudioButton();
+        });
+        
+        // Gestisci il focus per evitare problemi con la tastiera
+        audioToggle.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+        });
+        
+        // Inizializza lo stato del pulsante
+        this.updateAudioButton();
+        
+        // Gestisci l'interazione dell'utente per sbloccare l'autoplay
+        const unlockAudio = () => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                // Se l'audio è attivo ma non sta suonando, prova a farlo partire
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio sbloccato dall\'interazione utente');
+                }).catch(e => {
+                    console.log('Errore nello sblocco audio:', e);
+                });
+            } else if (!this.audioPlayer && this.audioFiles.length > 0) {
+                // Se non c'è un player audio ma ci sono file disponibili, creane uno nuovo
+                this.currentAudioIndex = Math.floor(Math.random() * this.audioFiles.length);
+                this.isAudioMuted = false;
+                this.playNextAudio();
+                this.updateAudioButton();
+            }
+        };
+        
+        // Funzione per tentare l'autoplay
+        const tryAutoplayOnInteraction = () => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato tramite interazione');
+                    // Rimuovi gli event listener dopo il successo
+                    document.removeEventListener('click', tryAutoplayOnInteraction);
+                    document.removeEventListener('touchstart', tryAutoplayOnInteraction);
+                    document.removeEventListener('mousedown', tryAutoplayOnInteraction);
+                    document.removeEventListener('keydown', tryAutoplayOnInteraction);
+                }).catch(e => {
+                    console.log('Tentativo autoplay tramite interazione fallito:', e);
+                });
+            }
+        };
+        
+        // Aggiungi event listener per sbloccare l'audio al primo click/touch
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('touchstart', unlockAudio);
+        
+        // Aggiungi event listener per tentare l'autoplay tramite interazione
+        document.addEventListener('click', tryAutoplayOnInteraction);
+        document.addEventListener('touchstart', tryAutoplayOnInteraction);
+        document.addEventListener('mousedown', tryAutoplayOnInteraction);
+        document.addEventListener('keydown', tryAutoplayOnInteraction);
+        
+        // Prova anche con eventi di movimento del mouse
+        document.addEventListener('mousemove', tryAutoplayOnInteraction);
+        document.addEventListener('scroll', tryAutoplayOnInteraction);
+        
+        // Forza l'avvio dell'audio al primo click ovunque
+        const forceAudioStart = () => {
+            if (this.audioPlayer && this.isAudioMuted === false && this.audioPlayer.paused) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio forzato al primo click ovunque');
+                    this.isAudioMuted = false;
+                    this.updateAudioButton();
+                    // Rimuovi l'event listener dopo il successo
+                    document.removeEventListener('click', forceAudioStart);
+                    document.removeEventListener('touchstart', forceAudioStart);
+                }).catch(e => {
+                    console.log('Errore nel forzare l\'audio:', e);
+                });
+            }
+        };
+        
+        document.addEventListener('click', forceAudioStart);
+        document.addEventListener('touchstart', forceAudioStart);
+    }
+
+    createHiddenAudioButton() {
+        // Crea un pulsante nascosto per forzare l'avvio dell'audio
+        const audioButton = document.createElement('button');
+        audioButton.id = 'hidden-audio-button';
+        audioButton.style.position = 'fixed';
+        audioButton.style.top = '10px';
+        audioButton.style.left = '10px';
+        audioButton.style.width = '50px';
+        audioButton.style.height = '50px';
+        audioButton.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+        audioButton.style.border = 'none';
+        audioButton.style.borderRadius = '50%';
+        audioButton.style.cursor = 'pointer';
+        audioButton.style.zIndex = '9999';
+        audioButton.style.opacity = '0.3';
+        audioButton.style.transition = 'opacity 0.3s';
+        audioButton.innerHTML = '🎵';
+        audioButton.title = 'Clicca per avviare la musica';
+        
+        // Mostra il pulsante solo se l'audio non è partito
+        audioButton.addEventListener('mouseenter', () => {
+            audioButton.style.opacity = '0.8';
+        });
+        
+        audioButton.addEventListener('mouseleave', () => {
+            audioButton.style.opacity = '0.3';
+        });
+        
+        audioButton.addEventListener('click', () => {
+            if (this.audioPlayer && this.isAudioMuted === false) {
+                this.audioPlayer.play().then(() => {
+                    console.log('Audio avviato tramite pulsante nascosto');
+                    this.isAudioMuted = false;
+                    this.updateAudioButton();
+                    // Nascondi il pulsante dopo il successo
+                    audioButton.style.display = 'none';
+                }).catch(e => {
+                    console.log('Errore nell\'avvio audio tramite pulsante:', e);
+                });
+            }
+        });
+        
+        document.body.appendChild(audioButton);
+        
+        // Nascondi il pulsante dopo 10 secondi se l'audio è partito
+        setTimeout(() => {
+            if (this.audioPlayer && !this.audioPlayer.paused) {
+                audioButton.style.display = 'none';
+            }
+        }, 10000);
     }
 
     mostraPopupVittoria(tipoReEliminato) {
