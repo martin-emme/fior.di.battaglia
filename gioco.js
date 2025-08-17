@@ -168,6 +168,9 @@ class PlanciaEsagonale {
 
         // Re (forza 0, movimento 1)
         this.createPedina(3, 4, 'rossa', 0, 1, 're');  // Re
+        
+        // Capitano (forza 0, movimento 1)
+        this.createPedina(1, 3, 'rossa', 0, 1, 'capitano');  // Capitano
 
         // Pedine gialle (Giocatore 2) - Posizionate simmetricamente nell'angolo in alto a destra
         // Soldati in armatura (forza 3)
@@ -200,6 +203,9 @@ class PlanciaEsagonale {
 
         // Re giallo (forza 0, movimento 1)
         this.createPedina(11, 14, 'gialla', 0, 1, 're');  // Re giallo
+        
+        // Capitano giallo (forza 0, movimento 1)
+        this.createPedina(12, 15, 'gialla', 0, 1, 'capitano');  // Capitano giallo
     }
 
     createPedina(row, col, tipo, forza, movimento, ruolo = 'soldato') {
@@ -243,6 +249,22 @@ class PlanciaEsagonale {
                 immagine.style.height = '100%';
             } else {
                 immagine.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23003366" d="M25,20 L35,10 L45,20 L45,30 L25,30 Z"/><path fill="%23FFFF00" d="M25,30 L45,30 L47,60 L23,60 Z"/><path fill="%23003366" d="M23,60 L33,60 L31,80 L25,80 Z M37,60 L47,60 L45,80 L39,80 Z"/><path fill="%23C0C0C0" d="M20,90 L65,0 L69,0 L24,90 Z"/><path fill="%23000000" d="M65,0 L69,0 L67,-5 Z"/><path fill="%23003366" d="M55,20 L65,10 L75,20 L75,30 L55,30 Z"/><path fill="%23FFFF00" d="M55,30 L75,30 L77,60 L53,60 Z"/><path fill="%23003366" d="M53,60 L63,60 L61,80 L55,80 Z M67,60 L77,60 L75,80 L69,80 Z"/><path fill="%23C0C0C0" d="M50,90 L95,0 L99,0 L54,90 Z"/><path fill="%23000000" d="M95,0 L99,0 L97,-5 Z"/></svg>')`;
+            }
+        } else if (ruolo === 'capitano') {
+            if (tipo === 'rossa') {
+                immagine.style.backgroundImage = `url('capitano.r1.png')`;
+                immagine.style.backgroundSize = 'contain';
+                immagine.style.backgroundRepeat = 'no-repeat';
+                immagine.style.backgroundPosition = 'center';
+                immagine.style.width = '100%';
+                immagine.style.height = '100%';
+            } else if (tipo === 'gialla') {
+                immagine.style.backgroundImage = `url('capitano.g1.png')`;
+                immagine.style.backgroundSize = 'contain';
+                immagine.style.backgroundRepeat = 'no-repeat';
+                immagine.style.backgroundPosition = 'center';
+                immagine.style.width = '100%';
+                immagine.style.height = '100%';
             }
         } else if (ruolo === 're') {
             if (tipo === 'rossa') {
@@ -314,6 +336,20 @@ class PlanciaEsagonale {
         if (ruolo === 're') {
             // Modifica il valore visualizzato per il re
             movimentoEl.textContent = "3";
+            
+            // Colora il numero in base al tipo di pedina
+            if (tipo === 'rossa') {
+                movimentoEl.style.color = '#FF0000'; // Rosso brillante
+                movimentoEl.style.fontWeight = 'bold';
+            } else if (tipo === 'gialla') {
+                movimentoEl.style.color = '#FFFF00'; // Giallo brillante
+                movimentoEl.style.fontWeight = 'bold';
+            }
+            
+            pedina.appendChild(movimentoEl);
+        } else if (ruolo === 'capitano') {
+            // Per il Capitano, mostra solo il raggio d'azione (2)
+            movimentoEl.textContent = "2";
             
             // Colora il numero in base al tipo di pedina
             if (tipo === 'rossa') {
@@ -614,16 +650,37 @@ class PlanciaEsagonale {
     }
 
     handlePedinaClick(pedina) {
+        console.log('=== INIZIO VALIDAZIONE PEDINA ===');
+        console.log(`Pedina cliccata: tipo=${pedina.dataset.tipo}, ruolo=${pedina.dataset.ruolo}, posizione=(${pedina.dataset.row}, ${pedina.dataset.col})`);
+        console.log(`Fase turno: ${this.faseTurno}, Turno giocatore: ${this.turno}`);
+        
         // Se siamo in fase combattimento, non permettere movimenti
         if (this.faseTurno === 'combattimento') {
+            console.log('❌ Fase combattimento - movimento non consentito');
             return;
         }
 
         // Verifica che la pedina appartenga al giocatore corrente
         const tipoPedinaCorrente = this.turno === 1 ? 'rossa' : 'gialla';
+        console.log(`Tipo pedina corrente: ${tipoPedinaCorrente}`);
+        
         if (pedina.dataset.tipo !== tipoPedinaCorrente) {
+            console.log('❌ Pedina non appartiene al giocatore corrente');
             return;
         }
+
+        // NUOVA REGOLA: Verifica che la pedina sia nel raggio d'azione del capitano o re
+        console.log(`🔍 Validazione raggio d'azione per pedina in (${pedina.dataset.row}, ${pedina.dataset.col})`);
+        const inRaggio = this.isPedinaInRaggioCapitanoORe(pedina);
+        console.log(`Risultato validazione raggio: ${inRaggio}`);
+        
+        if (!inRaggio) {
+            console.log(`❌ Movimento bloccato: pedina fuori dal raggio d'azione`);
+            // Mostra un messaggio di errore
+            this.mostraMessaggioErrore('Questa pedina non può muoversi: deve essere nel raggio d\'azione del capitano o del re!');
+            return;
+        }
+        console.log(`✅ Movimento consentito: pedina nel raggio d'azione`);
 
         const movimento = parseInt(pedina.dataset.movimento);
         // Se la pedina ha già fatto il numero massimo di mosse consentito dal suo valore movimento, non permettere ulteriori movimenti
@@ -759,12 +816,14 @@ class PlanciaEsagonale {
             [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
             [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
 
-        // Controlla se c'è un re tra le pedine attive
-        const hasRe = Array.from(pedineAttive).some(pedina => pedina.dataset.ruolo === 're');
+        // Controlla se c'è un re o un capitano tra le pedine attive
+        const hasReOrCapitano = Array.from(pedineAttive).some(pedina => 
+            pedina.dataset.ruolo === 're' || pedina.dataset.ruolo === 'capitano'
+        );
         
-        if (hasRe) {
-            // Funzionalità speciale del re: evidenzia solo le caselle adiacenti (movimento 1)
-            // Il re si comporta come una pedina normale con movimento 1
+        if (hasReOrCapitano) {
+            // Funzionalità speciale del re e capitano: evidenzia caselle adiacenti e a distanza 2
+            // Il re e il capitano si comportano in modo speciale con movimento 1 ma raggio esteso
             
             // Caselle adiacenti (movimento normale)
             directions.forEach(([dr, dc]) => {
@@ -783,7 +842,7 @@ class PlanciaEsagonale {
                     // Caselle raggiungibili per il movimento (solo senza nemici)
                     if (pedineNemiche.length === 0 && pedineAmiche.length < 3) {
                         hex.classList.add('reachable');
-                        hex.classList.add('re-reachable'); // Classe speciale per il re
+                        hex.classList.add('re-reachable'); // Classe speciale per re e capitano
                     }
                 }
             });
@@ -791,8 +850,11 @@ class PlanciaEsagonale {
             // Evidenzia anche le caselle adiacenti alle caselle evidenziate (distanza 2)
             this.evidenziaCaselleAdiacentiEvidenziate(row, col, tipoPedinaCorrente);
             
-            // Evidenzia anche le caselle a distanza 3 (adiacenti alle caselle a distanza 2)
-            this.evidenziaCaselleDistanza3(row, col, tipoPedinaCorrente);
+            // Evidenzia anche le caselle a distanza 3 SOLO per il re
+            const hasRe = Array.from(pedineAttive).some(pedina => pedina.dataset.ruolo === 're');
+            if (hasRe) {
+                this.evidenziaCaselleDistanza3(row, col, tipoPedinaCorrente);
+            }
             
         } else {
             // Comportamento normale per tutte le altre pedine
@@ -853,7 +915,7 @@ class PlanciaEsagonale {
             [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
             [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
         
-        // Per ogni casella adiacente al re, trova le caselle adiacenti a quella
+        // Per ogni casella adiacente al re o capitano, trova le caselle adiacenti a quella
         directions.forEach(([dr1, dc1]) => {
             const casellaAdiacenteRow = row + dr1;
             const casellaAdiacenteCol = col + dc1;
@@ -893,7 +955,7 @@ class PlanciaEsagonale {
             [[0, 1], [0, -1], [1, 0], [-1, 1], [-1, 0], [-1, -1]] : // Colonne dispari
             [[0, 1], [0, -1], [1, 0], [1, -1], [-1, 0], [1, 1]];   // Colonne pari
         
-        // Per ogni casella adiacente al re, trova le caselle adiacenti a quella
+        // Per ogni casella adiacente al re o capitano, trova le caselle adiacenti a quella
         directions.forEach(([dr1, dc1]) => {
             const casellaAdiacenteRow = row + dr1;
             const casellaAdiacenteCol = col + dc1;
@@ -956,7 +1018,8 @@ class PlanciaEsagonale {
             'music/Sandal Maker.mp3',
             'music/The Piper.mp3',
             'music/Two Mandolins.mp3',
-            'music/Under an Old Tree.mp3'
+            'music/Under an Old Tree.mp3',
+            'music/A l\'entrada del temps clar.mp3'
         ];
         
         if (this.audioFiles.length > 0) {
@@ -1337,6 +1400,89 @@ class PlanciaEsagonale {
         return directions.some(([dr, dc]) => {
             return reRow + dr === row && reCol + dc === col;
         });
+    }
+    
+    isCasellaAdiacenteAlCapitano(row, col, capitanoRow, capitanoCol) {
+        // Il capitano ha lo stesso comportamento del re
+        return this.isCasellaAdiacenteAlRe(row, col, capitanoRow, capitanoCol);
+    }
+    
+    isPedinaInRaggioCapitanoORe(pedina) {
+        const row = parseInt(pedina.dataset.row);
+        const col = parseInt(pedina.dataset.col);
+        const tipo = pedina.dataset.tipo;
+        
+        // Trova tutti i capitani e re della stessa squadra
+        const capitaniERe = document.querySelectorAll(`.pedina[data-tipo="${tipo}"][data-ruolo="capitano"], .pedina[data-tipo="${tipo}"][data-ruolo="re"]`);
+        
+        // Debug: log delle posizioni
+        console.log(`Controllo pedina in (${row}, ${col}) per squadra ${tipo}`);
+        
+        for (const unitaSpeciale of capitaniERe) {
+            const unitaRow = parseInt(unitaSpeciale.dataset.row);
+            const unitaCol = parseInt(unitaSpeciale.dataset.col);
+            const ruolo = unitaSpeciale.dataset.ruolo;
+            
+            // Calcola la distanza dalla pedina all'unità speciale
+            const distanza = this.calcolaDistanzaEuclidea(row, col, unitaRow, unitaCol);
+            
+            // Il capitano ha raggio 2, il re ha raggio 3
+            const raggioMassimo = ruolo === 'capitano' ? 2 : 3;
+            
+            console.log(`  ${ruolo} in (${unitaRow}, ${unitaCol}): distanza=${distanza}, raggio=${raggioMassimo}, inRaggio=${distanza <= raggioMassimo}`);
+            
+            if (distanza <= raggioMassimo) {
+                console.log(`  ✓ Pedina in (${row}, ${col}) è nel raggio del ${ruolo}`);
+                return true; // La pedina è nel raggio d'azione
+            }
+        }
+        
+        console.log(`  ✗ Pedina in (${row}, ${col}) NON è nel raggio di nessuna unità speciale`);
+        return false; // La pedina non è nel raggio d'azione di nessuna unità speciale
+    }
+    
+    calcolaDistanzaEuclidea(row1, col1, row2, col2) {
+        // Calcola la distanza esagonale tra due punti usando l'algoritmo corretto
+        const dx = col2 - col1;
+        const dy = row2 - row1;
+        
+        console.log(`  Calcolo distanza da (${row1}, ${col1}) a (${row2}, ${col2}): dx=${dx}, dy=${dy}`);
+        
+        // Algoritmo corretto per distanza esagonale su griglia offset
+        // Per una griglia esagonale, la distanza è il massimo tra le differenze assolute
+        // con un aggiustamento per la disposizione esagonale
+        
+        let distanza;
+        
+        // Se le colonne sono entrambe pari o entrambe dispari
+        if ((col1 % 2 === 0) === (col2 % 2 === 0)) {
+            // Calcolo standard per colonne dello stesso tipo
+            distanza = Math.max(Math.abs(dx), Math.abs(dy));
+            console.log(`  Colonne dello stesso tipo: distanza = max(|${dx}|, |${dy}|) = ${distanza}`);
+        } else {
+            // Una colonna è pari e l'altra dispari
+            // Aggiustamento per la disposizione esagonale
+            if (col1 % 2 === 0) {
+                // col1 è pari, col2 è dispari
+                if (dy > 0) {
+                    distanza = Math.max(Math.abs(dx), Math.abs(dy) - 0.5);
+                } else {
+                    distanza = Math.max(Math.abs(dx), Math.abs(dy) + 0.5);
+                }
+                console.log(`  col1 pari, col2 dispari, dy>0: distanza = max(|${dx}|, |${dy}| ${dy > 0 ? '-0.5' : '+0.5'}) = ${distanza}`);
+            } else {
+                // col1 è dispari, col2 è pari
+                if (dy < 0) {
+                    distanza = Math.max(Math.abs(dx), Math.abs(dy) + 0.5);
+                } else {
+                    distanza = Math.max(Math.abs(dx), Math.abs(dy) - 0.5);
+                }
+                console.log(`  col1 dispari, col2 pari, dy<0: distanza = max(|${dx}|, |${dy}| ${dy < 0 ? '+0.5' : '-0.5'}) = ${distanza}`);
+            }
+        }
+        
+        console.log(`  Distanza finale calcolata: ${distanza}`);
+        return distanza;
     }
 
     calcolaPosizioniADistanza(row, col, distanza) {
@@ -2153,6 +2299,43 @@ class PlanciaEsagonale {
                 }
             }
         });
+        
+        // Se è un re o capitano, mostra anche le caselle a distanza 2
+        if (pedina.dataset.ruolo === 're' || pedina.dataset.ruolo === 'capitano') {
+            this.evidenziaCaselleAdiacentiEvidenziate(row, col, tipo);
+        }
+        
+        // Se è solo il re, mostra anche le caselle a distanza 3
+        if (pedina.dataset.ruolo === 're') {
+            this.evidenziaCaselleDistanza3(row, col, tipo);
+        }
+    }
+    
+    mostraMessaggioErrore(messaggio) {
+        // Crea un messaggio di errore temporaneo
+        const messaggioEl = document.createElement('div');
+        messaggioEl.className = 'messaggio-errore';
+        messaggioEl.textContent = messaggio;
+        messaggioEl.style.position = 'fixed';
+        messaggioEl.style.top = '50%';
+        messaggioEl.style.left = '50%';
+        messaggioEl.style.transform = 'translate(-50%, -50%)';
+        messaggioEl.style.backgroundColor = 'rgba(255, 0, 0, 0.9)';
+        messaggioEl.style.color = 'white';
+        messaggioEl.style.padding = '15px 20px';
+        messaggioEl.style.borderRadius = '8px';
+        messaggioEl.style.fontSize = '16px';
+        messaggioEl.style.fontWeight = 'bold';
+        messaggioEl.style.zIndex = '3000';
+        messaggioEl.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3)';
+        messaggioEl.style.animation = 'fadeInOut 3s ease-in-out';
+        
+        document.body.appendChild(messaggioEl);
+        
+        // Rimuovi il messaggio dopo 3 secondi
+        setTimeout(() => {
+            messaggioEl.remove();
+        }, 3000);
     }
 
     rimuoviEsagoniRitirata() {
@@ -2209,7 +2392,10 @@ class PlanciaEsagonale {
             const pedinaEl = document.createElement('div');
             pedinaEl.className = 'pedina-selezionabile';
             
-            if (mosseEffettuate >= movimento) {
+            // Verifica se la pedina è nel raggio d'azione del capitano o re
+            const inRaggio = this.isPedinaInRaggioCapitanoORe(pedina);
+            
+            if (mosseEffettuate >= movimento || !inRaggio) {
                 pedinaEl.classList.add('disabled');
             }
             
@@ -2220,7 +2406,15 @@ class PlanciaEsagonale {
             
             const info = document.createElement('div');
             info.className = 'pedina-info';
-            info.textContent = `Pedina ${index + 1} (${mosseEffettuate}/${movimento} mosse)`;
+            
+            if (!inRaggio) {
+                info.textContent = `Pedina ${index + 1} - Fuori dal raggio d'azione`;
+                info.style.color = '#FF6B6B';
+            } else if (mosseEffettuate >= movimento) {
+                info.textContent = `Pedina ${index + 1} (${mosseEffettuate}/${movimento} mosse)`;
+            } else {
+                info.textContent = `Pedina ${index + 1} (${mosseEffettuate}/${movimento} mosse)`;
+            }
             
             pedinaEl.appendChild(clonePedina);
             pedinaEl.appendChild(info);

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fior di Battaglia</title>
+    <link rel="stylesheet" href="stile.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#e74c3c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fior di Battaglia">
+    <link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+    <div class="ui-container">
+        <div id="turno-indicatore">Turno: Giocatore 1</div>
+        <button id="fine-turno">Fine Turno</button>
+        <button id="ruota-plancia">Ruota Plancia</button>
+    </div>
+    <div class="game-container">
+        <div class="game-border">
+            <div id="viewport">
+                <div id="plancia"></div>
+            </div>
+        </div>
+        <div class="zoom-slider-container">
+            <div class="zoom-slider">
+                <span class="zoom-label top-label">+</span>
+                <input type="range" id="zoom-slider" min="0.2" max="5" step="0.1" value="4.2" orient="vertical">
+                <span class="zoom-label bottom-label">-</span>
+            </div>
+        </div>
+    </div>
+    <div class="logo-container">
+        <img src="broders.png" alt="Broders Logo" class="logo">
+    </div>
+    <div class="title-overlay">
+        <img src="titolo1.jpg" alt="Titolo" class="title-image">
+    </div>
+    
+    <!-- Controllo Audio -->
+    <div class="audio-control">
+        <button id="audio-toggle" class="audio-button">
+            <span class="audio-icon">🔊</span>
+        </button>
+    </div>
+    
+    <!-- Pulsante Installazione PWA -->
+    <div class="pwa-install-container" id="pwa-install-container" style="display: none;">
+        <button id="pwa-install-button" class="pwa-install-button">
+            📱 Installa App
+        </button>
+    </div>
+    
+    <script src="gioco.js"></script>
+    <script>
+        // Registra il service worker per la PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/fior-di-battaglia/sw.js')
+                    .then((registration) => {
+                        console.log('SW registrato: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW fallito: ', registrationError);
+                    });
+            });
+        }
+        
+        // Gestione installazione PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Previeni il prompt automatico
+            e.preventDefault();
+            // Salva l'evento per usarlo dopo
+            deferredPrompt = e;
+            // Mostra il pulsante di installazione
+            const installContainer = document.getElementById('pwa-install-container');
+            if (installContainer) {
+                installContainer.style.display = 'block';
+            }
+        });
+        
+        // Gestisci il click sul pulsante di installazione
+        document.addEventListener('DOMContentLoaded', () => {
+            const installButton = document.getElementById('pwa-install-button');
+            if (installButton) {
+                installButton.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        // Mostra il prompt di installazione
+                        deferredPrompt.prompt();
+                        // Aspetta la risposta dell'utente
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`Utente ha scelto: ${outcome}`);
+                        // Nascondi il pulsante
+                        deferredPrompt = null;
+                        const installContainer = document.getElementById('pwa-install-container');
+                        if (installContainer) {
+                            installContainer.style.display = 'none';
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Gestisci l'installazione completata
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA installata con successo!');
+            // Nascondi il pulsante di installazione
+            const installContainer = document.getElementById('pwa-install-container');
+            if (installContainer) {
+                installContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
